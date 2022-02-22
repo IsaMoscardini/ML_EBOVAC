@@ -73,3 +73,21 @@ write.table(veb, "Intermed/BioFeatS_EBOP_EBOV_VEB/D7/norm_vebcon_d7.txt", quote 
 
 tab <- read.delim("Intermed/BioFeatS_EBOP_EBOV_VEB/D7/norm_eboplus_d7.txt")
 View(tab)
+
+pheno <- read.delim("Intermed/Biofeats_USA_Vebcon_D7/pheno_USA_d7.txt")
+View(pheno)
+identical(pheno$Probes, colnames(ebop[,-1])) # TRUE
+pheno$Class <- gsub("7", "D7", pheno$Class)
+write.table(pheno, "Intermed/BioFeatS_EBOP_EBOV_VEB/D7/pheno_eboplus_d7.txt", quote = FALSE, row.names = FALSE, sep = '\t')
+
+identical(descript_ebovac$Sample, colnames(p[,-1])) # TRUE
+
+pheno_ebov <- descript_ebovac[,c(1,4)]
+colnames(pheno_ebov) <- c("Probes", "Class")
+pheno_ebov$Class <- gsub("0", "D0", pheno_ebov$Class)
+pheno_ebov$Class <- gsub("7", "D7", pheno_ebov$Class)
+View(pheno_ebov)
+
+write.table(pheno_ebov, "Intermed/BioFeatS_EBOP_EBOV_VEB/D7/pheno_ebovac_d7.txt", quote = FALSE, row.names = FALSE, sep = '\t')
+
+
