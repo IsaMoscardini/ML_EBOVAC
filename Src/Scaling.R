@@ -29,8 +29,8 @@ geneva_counts_b2 <- geneva_counts[,inter_b2]
 #View(geneva_counts_b2)
 
 ## Select D1  
-geneva_pheno_b1 <- geneva_pheno_b1[geneva_pheno_b1$Group.Day %in% c(0,1),]
-geneva_pheno_b2 <- geneva_pheno_b2[geneva_pheno_b2$Group.Day %in% c(0,1),]
+geneva_pheno_b1 <- geneva_pheno_b1[geneva_pheno_b1$Group.Day %in% c(0,7),]
+geneva_pheno_b2 <- geneva_pheno_b2[geneva_pheno_b2$Group.Day %in% c(0,7),]
 #View(geneva_pheno_b1)
 
 inter_b1 <- intersect(geneva_pheno_b1$Sample, colnames(geneva_counts_b1))
@@ -52,14 +52,16 @@ y.1 <- calcNormFactors(y_ebovac)
 b1 <- cpm(y.1, log = TRUE, prior.count = 1)
 b1 <- as.data.frame(b1)
 b1$Probes <- rownames(b1)
-b1 <- b1[,c(52, 1:51)]
-#View(b1)
+dim(b1)
+b1 <- b1[,c(38, 1:37)]
+View(b1)
 
 geneva_pheno_b1 <- geneva_pheno_b1[,c(1,4)]
 colnames(geneva_pheno_b1) <- c("Probes", "Class")
 View(geneva_pheno_b1)
+geneva_pheno_b1$Class <- paste0("D", geneva_pheno_b1$Class)
 
-write.table(geneva_pheno_b1, "Intermed/BioFeatS_scaled_ebola/pheno_ebovac_b1_d1.txt", quote = FALSE, row.names = FALSE, sep = '\t')
+write.table(geneva_pheno_b1, "Intermed/BioFeatS_scaled_ebola/pheno_ebovac_b1_d7.txt", quote = FALSE, row.names = FALSE, sep = '\t')
 
 
 # B2
@@ -74,24 +76,25 @@ b2 <- cpm(y.2, log = TRUE, prior.count = 1)
 b2 <- as.data.frame(b2)
 b2$Probes <- rownames(b2)
 dim(b2)
-b2 <- b2[,c(39, 1:38)]
-#View(b2)
+b2 <- b2[,c(50, 1:49)]
+View(b2)
 
 geneva_pheno_b2 <- geneva_pheno_b2[,c(1,4)]
-colnames(geneva_pheno_b1) <- c("Probes", "Class")
-View(geneva_pheno_b1)
+colnames(geneva_pheno_b2) <- c("Probes", "Class")
+geneva_pheno_b2$Class <- paste0("D", geneva_pheno_b2$Class)
+View(geneva_pheno_b2)
 
-write.table(geneva_pheno_b2, "Intermed/BioFeatS_scaled_ebola/pheno_ebovac_b2_d1.txt", quote = FALSE, row.names = FALSE, sep = '\t')
+write.table(geneva_pheno_b2, "Intermed/BioFeatS_scaled_ebola/pheno_ebovac_b2_d7.txt", quote = FALSE, row.names = FALSE, sep = '\t')
 
 
 ##### EBOPLUS ####
-eboplus <- read.delim("Intermed/data_BioFeats_USA/final_data/norm_counts_d1.txt")
+eboplus <- read.delim("Intermed/data_BioFeats_USA/final_data/norm_counts_d7.txt")
 #View(eboplus)
 
 
 ##### VEBCON ####
-vebcon <- read.delim("Intermed/BioFeatS_EBOP_EBOV_VEB/D1/vebcon_norm_counts_d1.txt")
-#View(vebcon)
+vebcon <- read.delim("Intermed/BioFeatS_EBOP_EBOV_VEB/D7/norm_vebcon_d7.txt")
+View(vebcon)
 
 inter <- Reduce(intersect, list(b1$Probes, b2$Probes, eboplus$Probes, vebcon$Probes))
 
@@ -132,18 +135,18 @@ b2$Probes <- rownames(b2)
 eboplus$Probes <- rownames(eboplus)
 vebcon$Probes <- rownames(vebcon)
 
-b1 <- b1[,c(52,1:51)]
-b2 <- b2[,c(39,1:38)]
-eboplus <- eboplus[,c(64,1:63)]
-vebcon <- vebcon[,c(27, 1:26)]
+b1 <- b1[,c(38,1:37)]
+b2 <- b2[,c(50,1:49)]
+eboplus <- eboplus[,c(65,1:64)]
+vebcon <- vebcon[,c(29, 1:28)]
 View(vebcon)
 
 #####
 
-write.table(b1, "Intermed/BioFeatS_scaled_ebola/scaled_ebovac_b1_d1.txt", quote = FALSE, row.names = FALSE, sep = '\t')
-write.table(b2, "Intermed/BioFeatS_scaled_ebola/scaled_ebovac_b2_d1.txt", quote = FALSE, row.names = FALSE, sep = '\t')
-write.table(eboplus, "Intermed/BioFeatS_scaled_ebola/scaled_eboplus_d1.txt", quote = FALSE, row.names = FALSE, sep = '\t')
-write.table(vebcon, "Intermed/BioFeatS_scaled_ebola/scaled_vebcon_d1.txt", quote = FALSE, row.names = FALSE, sep = '\t')
+write.table(b1, "Intermed/BioFeatS_scaled_ebola/scaled_ebovac_b1_d7.txt", quote = FALSE, row.names = FALSE, sep = '\t')
+write.table(b2, "Intermed/BioFeatS_scaled_ebola/scaled_ebovac_b2_d7.txt", quote = FALSE, row.names = FALSE, sep = '\t')
+write.table(eboplus, "Intermed/BioFeatS_scaled_ebola/scaled_eboplus_d7.txt", quote = FALSE, row.names = FALSE, sep = '\t')
+write.table(vebcon, "Intermed/BioFeatS_scaled_ebola/scaled_vebcon_d7.txt", quote = FALSE, row.names = FALSE, sep = '\t')
 
 
 #
