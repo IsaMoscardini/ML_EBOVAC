@@ -25,7 +25,7 @@ GSE19439_pheno <- GSE19439_pheno[GSE19439_pheno$Probes %in% inter, ]
 identical(colnames(GSE19439_counts), GSE19439_pheno$Probes) # TRUE
 
 feat <- read.delim("GSE19439/data/GSE19439_platform_annotation.tsv")
-View(feat)
+#View(feat)
 
 GSE19439_counts$Symbol <- feat$Symbol[match(rownames(GSE19439_counts), feat$ID)]
 GSE19439_counts$SUM <- rowSums(GSE19439_counts[,1:29])
@@ -36,13 +36,15 @@ GSE19439_counts$SUM <- NULL
 
 GSE19439_counts <- GSE19439_counts[,c(30,1:29)]
 colnames(GSE19439_counts)[1] <- "Probes"
-View(GSE19439_counts)
+#View(GSE19439_counts)
 GSE19439_counts[,2:30] <- log2(GSE19439_counts[,2:30])
+GSE19439_counts <- GSE19439_counts[complete.cases(GSE19439_counts),]
+
 
 # boxplot(log2(GSE19439_counts[,2:30]))
 # melty <- reshape2::melt(GSE19439_counts)
 
-write.table(GSE19439_counts, "Normalized_TB_studies/GSE19439_final_counts.txt", quote = FALSE, sep = '\t', row.names = FALSE)
+#write.table(GSE19439_counts, "Normalized_TB_studies/GSE19439_final_counts.txt", quote = FALSE, sep = '\t', row.names = FALSE)
 #write.table(GSE19439_pheno, "Normalized_TB_studies/GSE19439_final_pheno.txt", quote = FALSE, sep = '\t', row.names = FALSE)
 
 
@@ -83,8 +85,15 @@ GSE19444_counts$SUM <- NULL
 GSE19444_counts <- GSE19444_counts[,c(34,1:33)]
 colnames(GSE19444_counts)[1] <- "Probes"
 GSE19444_counts[,2:34] <- log2(GSE19444_counts[,2:34])
-View(GSE19444_counts)
+GSE19444_counts <- GSE19444_counts[complete.cases(GSE19444_counts),]
+#View(GSE19444_counts)
 
+inter <- intersect(GSE19439_counts$Probes, GSE19444_counts$Probes)
+GSE19439_counts <- GSE19439_counts[GSE19439_counts$Probes %in% inter,]
+GSE19444_counts <- GSE19444_counts[GSE19444_counts$Probes %in% inter,] 
+identical(GSE19439_counts$Probes, GSE19444_counts$Probes)
+
+write.table(GSE19439_counts, "Normalized_TB_studies/GSE19439_final_counts.txt", quote = FALSE, sep = '\t', row.names = FALSE)
 write.table(GSE19444_counts, "Normalized_TB_studies/GSE19444_final_counts.txt", quote = FALSE, sep = '\t', row.names = FALSE)
 #write.table(GSE19444_pheno, "Normalized_TB_studies/GSE19444_final_pheno.txt", quote = FALSE, sep = '\t', row.names = FALSE)
 
