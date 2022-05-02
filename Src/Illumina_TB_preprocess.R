@@ -1,15 +1,130 @@
 #####
 rm(list = ls()) 
 options(stringsAsFactors = F) 
-basedir <- "C:/Users/Isabelle/Documents/PROJECTS/Ebola_ML/GSE19439/" 
+basedir <- "C:/Users/Isabelle/Documents/PROJECTS/Ebola_ML/GSE19444/" 
 setwd(basedir) 
-gse_id = 'GSE19439' 
+gse_id = 'GSE19444' 
 #url_rawdata \<- '<https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSE19439&format=file>'
 
 
-pkgs <- c('matrixStats','GEOquery','impute','naniar','preprocessCore','mixOmics','Rtsne','arrayQualityMetrics','reshape2')
+pkgs <- c('matrixStats','GEOquery','impute','naniar','preprocessCore','mixOmics','Rtsne','arrayQualityMetrics','reshape2',
+          'biobase', 'mdp', 'limma')
 sum(unlist(lapply(pkgs, require,character.only = T))) == length(pkgs)
 #source('helper_functions/eda.R')
+
+dir.create("data/")
+dir.create("intermediate/")
+dir.create("intermediate/AQM_before_normalization")
+dir.create("intermediate/AQM_after_normalization")
+dir.create("intermediate/AQM_free_outliers")
+dir.create("intermediate/MDP")
+
+gseID <- "GSE19444"
+gpl <- "GPL6947"
+outDir <- "./data/"
+
+# Save in an object the path where the output of AQM before pre processing will be saved
+aqm_before_normalization <- paste0(gseID, "/intermediate/", "AQM_before_normalization")
+aqm_after_normalization <- paste0(gseID, "/intermediate/", "AQM_after_normalization")
+aqm_free_outliers <- paste0(gseID, "/intermediate/", "AQM_free_outliers")
+mdp_before_outliers <- paste0(gseID, "/intermediate/", "MDP/", "before_outliers_removal")
+mdp_after_outliers <- paste0(gseID, "/intermediate/", "MDP/", "after_outliers_removal")
+
+
+######### Analysis ------------------------------------------------------------------------------
+# Download data
+gse <- getGEO(gseID)
+names(gse)
+
+getGEOSuppFiles(gseID) # raw data, CEL files
+expr <- exprs(gse[[1]]) # normalized expression by the author
+pd <- pData(gse[[1]]) # phenodata
+plat <- gse[[1]]@featureData@data # platform annotation
+
+# saving the tables
+write.table(expr, paste0(outDir, gseID, "_","expression_normalized_author.tsv"), sep = "\t", row.names = TRUE, col.names = NA)
+write.table(pd, paste0(outDir, gseID, "_", "phenodata_original.tsv"), sep = "\t", row.names = TRUE, col.names = NA)
+write.table(plat, paste0(outDir, gseID, "_", "platform_annotation.tsv"), sep = "\t", row.names = TRUE, col.names = NA)
+
+# in case where there're many files, run this first
+raw_files <- list.files(path = "data/RAW/Dizip/", pattern = ".txt", ignore.case = TRUE, recursive = TRUE, full.names = TRUE)
+tabelas <- lapply(raw_files, read.delim) %>% setNames(basename(raw_files))
+View(tabelas[[1]])
+
+#for (i in names(tabelas)){
+  tabela = tabelas[[1]]
+  tabela <- tabela[1:48803,]
+  View(tabela)
+  write.table(tabela, paste0('data/RAW_filt/',i), row.names = FALSE)
+}
+
+# exp_df <- read.table("data/rawdata/GSE69528_non_normalized.txt", header = T, sep = "\t") # check the table
+raw_files <- list.files(path = "data/RAW_filt/", pattern = ".txt", ignore.case = TRUE, recursive = TRUE, full.names = TRUE)
+rawdata <- read.ilmn(files = raw_files, ctrlfiles = NULL, probeid = "ID_REF",
+                     expr = "VALUE", other.columns = "Detection.PVal")
+
+View(rawdata$E)
+
+# Get the raw expression matrix
+raw_exprs <- rawdata$E
+min(raw_exprs)
+max(raw_exprs)
+raw_exprs <- raw_exprs + 20
+raw_exprs_df <- as.data.frame(raw_exprs)
+
+# Save the raw expression matrix
+write.table(raw_exprs_df, paste0(outDir, gseID, "_","raw_expression_no_norm.tsv"), sep = "\t", row.names = TRUE, col.names = NA)
+
+
+# Quality control before normalization -----------------------------------------------------------
+raw_expset <- ExpressionSet(assayData = raw_exprs)
+
+# Run AQM using as input an ExpressionSet that contains only the raw expression matrix
+arrayQualityMetrics(expressionset = raw_expset,
+                    outdir = aqm_before_normalization,
+                    force = TRUE,
+                    do.logtransform = TRUE)
+
+
+# Normalization ---------------------------------------------------------------------------------
+expr_norm <- neqc(rawdata, detection.p = "Detection PVal")
+
+# Quality control after normalization ------------------------------------------------------------
+norm_expset <- ExpressionSet(assayData = expr_norm$E)
+
+arrayQualityMetrics(expressionset = norm_expset,
+                    outdir = aqm_after_normalization,
+                    force = TRUE,
+                    do.logtransform = FALSE)
+
+
+# Outlier removal and renormalization -----------------------------------------------------------
+
+# Creating a vector with the outlier samples (see the table in the index)
+# outlier_samples <- c("")
+# 
+# rawdata_noOutliers <- rawdata[, !(colnames(rawdata$E) %in% outliers_samples)]
+
+
+# Get the final expression table
+expr_table <- expr_norm$E
+expr_table <- as.data.frame(expr_table)
+expr_table <- expr_table[, pd$description.1]
+table(colnames(expr_table) == pd$description.1)
+colnames(expr_table) <- pd$geo_accession
+
+
+
+
+
+
+
+
+
+
+##############
+
+
 
 
 #--- DIRECTORIES
@@ -193,7 +308,7 @@ View(head(raw_exprs,20))
 
 
 
-##### Check genes in both studies ####
+##### Check genes in both studies ###############################################################
 
 tb <- read.delim("GSE19439/data/GSE19439_expr_norm_collapsed_final.txt")
 #View(tb)
@@ -238,9 +353,10 @@ tb2 <- tb2[,c(53,1:52)]
 tb2$vars <- NULL
 
 ####
-pheno_tb1 <- read.delim("GSE19439/data/GSE19439_phenodata.txt")
+pheno_tb1 <- read.delim("GSE19439/data/GSE19439_phenodata_original.tsv")
 #View(pheno_tb1)
-pheno_tb1 <- pheno_tb1[pheno_tb1$outcome %in% c("PTB", "Latent"),]
+pheno_tb1 <- pheno_tb1[,c(1,14)]
+colnames(pheno_tb1) <- c("sample_id", "Class")
 
 both <- intersect(pheno_tb1$sample_id, colnames(tb))
 tb <- tb[,both]
@@ -248,17 +364,24 @@ pheno_tb1 <- pheno_tb1[pheno_tb1$sample_id %in% both,]
 
 identical(pheno_tb1$sample_id, colnames(tb)) # TRUE
 
-pheno_tb1 <- pheno_tb1[,1:2]
+#View(pheno_tb1)
+#pheno_tb1 <- pheno_tb1[,1:2]
 colnames(pheno_tb1) <- c("Probes", "Class")
 View(pheno_tb1)
+pheno_tb1$Class <- gsub("illness: ", "", pheno_tb1$Class)
+pheno_tb1$Class <- gsub(" .*", "", pheno_tb1$Class)
+
 
 tb$Probes <- rownames(tb)
 dim(tb)
-tb <- tb[,c(31,1:30)]
+View(tb)
+tb <- tb[,c(43,1:42)]
+
+identical(pheno_tb1$Probes, colnames(tb))
 
 ####
-write.table(tb, "Intermed/Tuberculose_BioFeatS/nrom_tb1_biofeats.txt", row.names = FALSE, quote = FALSE)
-write.table(pheno_tb1, "Intermed/Tuberculose_BioFeatS/pheno_tb1_biofeats.txt", row.names = FALSE, quote = FALSE)
+write.table(tb, "Intermed/Tuberculose_BioFeatS/nrom_GSE19439_biofeats.txt", row.names = FALSE, quote = FALSE)
+write.table(pheno_tb1, "Intermed/Tuberculose_BioFeatS/pheno_GSE19439_biofeats.txt", row.names = FALSE, quote = FALSE)
 
 ####
 pheno_tb2 <- read.delim("GSE19442/data/GSE19442_phenodata.txt")
@@ -271,7 +394,16 @@ View(pheno_tb2)
 View(tb2)
 
 ####
-write.table(tb2, "Intermed/Tuberculose_BioFeatS/norm_tb2_biofeats.txt", row.names = FALSE, quote = FALSE)
-write.table(pheno_tb2, "Intermed/Tuberculose_BioFeatS/pheno_tb2_biofeats.txt", row.names = FALSE, quote = FALSE)
+write.table(tb2, "Intermed/Tuberculose_BioFeatS/norm_GSE19442_biofeats.txt", row.names = FALSE, quote = FALSE)
+write.table(pheno_tb2, "Intermed/Tuberculose_BioFeatS/pheno_GSE19442_biofeats.txt", row.names = FALSE, quote = FALSE)
 
 
+##################à
+norm <- read.delim("GSE19439/data/GSE19439_expression_normalized_author.tsv")
+View(norm)
+
+feat <- read.delim("GSE19439/data/GSE19439_platform_annotation.tsv")
+View(feat)
+
+norm$Gene_ID <- feat$ILMN_Gene[match(norm$X, feat$X)]
+table(duplicated(norm$Gene_ID))

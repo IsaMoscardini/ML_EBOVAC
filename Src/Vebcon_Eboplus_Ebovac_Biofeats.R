@@ -15,10 +15,10 @@ rownames(descript_ebovac) <- paste0("X", descript_ebovac$Sample)
 descript_ebovac$Sample <- rownames(descript_ebovac)
 count_ebovac$X <- NULL
 descript_ebovac <- descript_ebovac[descript_ebovac$Treatment!="P",]
-table(descript_ebovac$Treatment == "P")
-#dim(count_ebovac)
+
 descript_ebovac <- descript_ebovac[descript_ebovac$Group.Day %in% c(0,7),]
-descript_ebovac <- descript_ebovac[descript_ebovac$Library.Batch == 2,]
+table(descript_ebovac$Library.Batch, descript_ebovac$Group.Day)
+descript_ebovac <- descript_ebovac[descript_ebovac$Library.Batch %in% c(1,2),]
 dim(descript_ebovac)
 
 common <- intersect(colnames(count_ebovac), rownames(descript_ebovac))
@@ -43,19 +43,19 @@ y.1 <- calcNormFactors(y_ebovac)
 
 p <- cpm(y.1, log = TRUE, prior.count = 1)
 
-View(p)
+dim(p)
 p <- as.data.frame(p)
 p$Probes <- rownames(p)
-p <- p[,c(50, 1:49)]
-
+p <- p[,c(90, 1:89)]
+View(p)
 
 ##### EBOPLUS ####
-ebop <- read.delim("Intermed/data_BioFeats_USA/final_data/norm_counts_d7.txt")
+ebop <- read.delim("Intermed/data_BioFeats_USA/final_data/norm_counts_d1.txt")
 View(ebop)
 
 
 ##### VEBCON ####
-veb <- read.delim("Intermed/vebcon_norm_counts_d7.txt")
+veb <- read.delim("Intermed/vebcon_norm_counts_d")
 View(veb)
 
 
@@ -91,3 +91,9 @@ View(pheno_ebov)
 write.table(pheno_ebov, "Intermed/BioFeatS_EBOP_EBOV_VEB/D7/pheno_ebovac_d7.txt", quote = FALSE, row.names = FALSE, sep = '\t')
 
 
+########à
+
+tab1 <- read.delim("Results/Comp_DEGs_BioFeatS/D1.txt")
+tab2 <- read.delim("Results/Comp_DEGs_BioFeatS/D7.txt")
+
+View(tab1);View(tab2)
